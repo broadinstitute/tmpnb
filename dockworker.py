@@ -1,5 +1,6 @@
 import binascii
 from collections import namedtuple
+from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 import os
 
@@ -129,15 +130,33 @@ class DockerSpawner():
         if container_config.host_directories:
             directories = container_config.host_directories.split(",")
             for index, item in enumerate(directories):
-                directory = item.split(":")[0]
+                parts = deque(item.split(":"))
+                directory = parts.popleft()
                 try:
-                    permissions = item.split(":")[1]
+                    permissions = parts.pop()
                 except IndexError:
                     permissions = 'rw'
 
-                volumes.append('/mnt/vol' + str(index))
+                try:
+                    destination = parts.popleft()
+                except IndexError:
+                    destination = '/mnt/vol' + str(index)
+
+                #directory = item.split(":")[0]
+                #try:
+                #    permissions = item.split(":")[1]
+                #except IndexError:
+                #    permissions = 'rw'
+
+                #volumes.append('/mnt/vol' + str(index))
+                #volume_bindings[directory] = {
+                #    'bind': '/mnt/vol' + str(index),
+                #    'mode': permissions
+                #}
+
+                volumes.append(destination)
                 volume_bindings[directory] = {
-                    'bind': '/mnt/vol' + str(index),
+                    'bind': destination,
                     'mode': permissions
                 }
 
